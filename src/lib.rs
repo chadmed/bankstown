@@ -121,22 +121,20 @@ struct Subwoofer {
  *
  */
 fn build_lpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
-    let mut filters: Vec<DirectForm2Transposed::<f32>> = Vec::new();
     let lp_coeff = Coefficients::<f32>::from_params(Type::LowPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
                                         .unwrap();
-    for _i in 0..2 {
-        filters.push(DirectForm2Transposed::<f32>::new(lp_coeff));
-    }
+
+    let filters: Vec<DirectForm2Transposed::<f32>> = vec![DirectForm2Transposed::<f32>::new(lp_coeff); 2];
+
     filters
 }
 
 fn build_hpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
-    let mut filters: Vec<DirectForm2Transposed::<f32>> = Vec::new();
     let hp_coeff = Coefficients::<f32>::from_params(Type::HighPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
                                         .unwrap();
-    for _i in 0..2 {
-        filters.push(DirectForm2Transposed::<f32>::new(hp_coeff));
-    }
+
+    let filters: Vec<DirectForm2Transposed::<f32>> = vec![DirectForm2Transposed::<f32>::new(hp_coeff); 2];
+
     filters
 }
 
