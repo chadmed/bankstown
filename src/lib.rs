@@ -10,6 +10,9 @@
  * Copyright (C) 2023 James Calligeros <jcalligeros99@gmail.com>
  */
 
+use std::f32::consts::E;
+use std::f32::consts::PI;
+
 use lv2::prelude::*;
 use biquad::*;
 
@@ -26,7 +29,6 @@ use biquad::*;
  *      ceil: ceiling frequency for harmonics
  *      amt: volume of harmonics to mix in to the output
  *      bypass: bypass all filtering
- *      harms: number of harmonics per root
  */
 #[derive(PortCollection)]
 struct Ports {
@@ -34,24 +36,21 @@ struct Ports {
     in_r: InputPort<Audio>,
     out_l: OutputPort<Audio>,
     out_r: OutputPort<Audio>,
+    bypass: InputPort<Control>,
+    amt: InputPort<Control>,
     floor: InputPort<Control>,
     ceil: InputPort<Control>,
-    amt: InputPort<Control>,
-    bypass: InputPort<Control>,
     saturation: InputPort<Control>,
-    blend: InputPort<Control>,
-    harmonics: InputPort<Control>
+    fc_out: InputPort<Control>
 }
 
 /*
  * Distortion/saturation module
  *
- * Built like this to avoid refactoring when we do this properly
+ * Uses a modified Error function.
  */
 struct Distortion {
     gain: f32,
-    blend: f32,
-    harmonics: f32
 }
 
 trait Saturator {
@@ -64,8 +63,6 @@ impl Saturator for Distortion {
     fn new() -> Self {
         Self {
             gain: 0f32,
-            blend: 0f32, // TODO
-            harmonics: 0f32 // TODO
         }
     }
 
@@ -73,20 +70,15 @@ impl Saturator for Distortion {
         if self.gain != *ports.saturation {
             self.gain = *ports.saturation;
         }
-
-        if self.blend != *ports.blend {
-            self.blend = *ports.blend;
-        }
-
-        if self.harmonics != *ports.harmonics {
-            self.harmonics = *ports.harmonics
-        }
-
-        // TODO: other params
     }
 
+    /*
+     * Saturation is performed with a modified Error function, which
+     * allows us to avoid hard clipping as x->inf. We saturate at ~0.8 full
+     * scale
+     */
     fn process(&mut self, sample: f32) -> f32 {
-        (sample * self.gain).tanh() // TODO: make this good
+        (PI / (1f32 + E)) * (sample * self.gain).tanh()
     }
 }
 
@@ -100,10 +92,8 @@ impl Saturator for Distortion {
  *      floor_curr: currently set floor frequency
  *      ceil_curr: currently set ceiling frequency
  *      amt_curr: currently set volume
- *      harms_curr: currently set harmonics
  *      sample_rate: sample rate at time of instantiation
  *
- * TODO: harmonic distortion algorithm
  */
 #[uri("https://chadmed.au/bankstown")]
 struct Subwoofer {
@@ -111,9 +101,11 @@ struct Subwoofer {
     ceil_curr: f32,
     amt_curr: f32,
     sample_rate: f32,
+    final_curr: f32,
     sat: Distortion,
     low_pass: Vec<DirectForm2Transposed::<f32>>,
-    high_pass: Vec<DirectForm2Transposed::<f32>>
+    high_pass: Vec<DirectForm2Transposed::<f32>>,
+    final_pass: Vec<DirectForm2Transposed::<f32>>
 }
 
 /*
@@ -138,6 +130,15 @@ fn build_hpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
     filters
 }
 
+fn build_finals(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
+    let final_coeff = Coefficients::<f32>::from_params(Type::HighPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
+                                           .unwrap();
+
+    let filters: Vec<DirectForm2Transposed::<f32>> = vec![DirectForm2Transposed::<f32>::new(final_coeff); 2];
+
+    filters
+}
+
 /*
  * Extend the Plugin trait so that we can modularly update the parameters of
  * the plugin IFF they have changed.
@@ -158,9 +159,11 @@ impl Plugin for Subwoofer {
             ceil_curr: 0f32,
             amt_curr: 0f32,
             sample_rate: info.sample_rate() as f32,
+            final_curr: 0f32,
             sat: Saturator::new(),
-            low_pass: build_lpfs(20f32, info.sample_rate() as f32),
-            high_pass: build_hpfs(250f32, info.sample_rate() as f32)
+            low_pass: build_lpfs(200f32, info.sample_rate() as f32),
+            high_pass: build_hpfs(20f32, info.sample_rate() as f32),
+            final_pass: build_finals(180f32, info.sample_rate() as f32)
         })
     }
 
@@ -174,30 +177,30 @@ impl Plugin for Subwoofer {
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
                 *outr = inr * 1.0;
             }
-        } else { // TODO: implement distortion part of pipeline
+        } else {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
-                // Band-pass on the processed sample
-                let mut processed: f32 = self.low_pass[0].run(*inl);
+                // Band pass on the input so that we are only saturating on the range we
+                // want to enhance
+                let mut processed: f32 = self.low_pass[0].run(self.high_pass[0].run(*inl));
 
-                processed = self.high_pass[0].run(self.sat.process(processed));
+                // Introduce nonlinearity to the passband
+                processed = self.sat.process(processed) * self.amt_curr;
 
-                // Sum back with input signal
-                *outl = (processed * self.amt_curr) + inl;
+                // Add it back to the input signal
+                *outl = self.final_pass[0].run(processed) + inl;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
-                // Band-pass on the processed sample
-                let mut processed: f32 = self.low_pass[1].run(*inr);
+                let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(*inr));
 
-                processed = self.high_pass[1].run(self.sat.process(processed));
+                processed = self.sat.process(processed) * self.amt_curr;
 
-                // Sum back with input signal
-                *outr = (processed * self.amt_curr) + inr;
+                *outr = self.final_pass[1].run(processed) + inr;
             }
         }
     }
 }
 
-// TODO: change params in-place
+// TODO: change params in-place to avoid zipper noise
 impl BassEx for Subwoofer {
     fn update_params(&mut self, ports: &mut Ports) {
         if self.floor_curr != *ports.floor {
@@ -212,6 +215,11 @@ impl BassEx for Subwoofer {
 
         if self.amt_curr != *ports.amt {
             self.amt_curr = *ports.amt;
+        }
+
+        if self.final_curr != *ports.fc_out {
+            self.final_pass = build_finals(*ports.fc_out, self.sample_rate);
+            self.final_curr = *ports.fc_out;
         }
     }
 }

@@ -40,10 +40,29 @@
         lv2:index 3 ;
         lv2:symbol "out_r" ;
         lv2:name "Out Right"
-    ], [
+    ] , [
         a lv2:InputPort ,
             lv2:ControlPort ;
         lv2:index 4 ;
+        lv2:symbol "bypass" ;
+        lv2:name "Bypass" ;
+        lv2:portProperty lv2:toggled ;
+        lv2:default 0.0 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 1.0
+    ] , [
+        a lv2:InputPort ,
+            lv2:ControlPort ;
+        lv2:index 5 ;
+        lv2:symbol "amt" ;
+        lv2:name "Amount" ;
+        lv2:default 1.0 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 15.0 ;
+    ] , [
+        a lv2:InputPort ,
+            lv2:ControlPort ;
+        lv2:index 6 ;
         lv2:symbol "floor" ;
         lv2:name "Floor Frequency" ;
         lv2:portProperty epp:logarithmic ;
@@ -65,7 +84,7 @@
     ] , [
         a lv2:InputPort ,
             lv2:ControlPort ;
-        lv2:index 5 ;
+        lv2:index 7 ;
         lv2:symbol "ceil" ;
         lv2:name "Ceiling Frequency" ;
         lv2:portProperty epp:logarithmic ;
@@ -87,25 +106,6 @@
     ] , [
         a lv2:InputPort ,
             lv2:ControlPort ;
-        lv2:index 6 ;
-        lv2:symbol "amt" ;
-        lv2:name "Amount" ;
-        lv2:default 1.0 ;
-        lv2:minimum 0.0 ;
-        lv2:maximum 15.0 ;
-    ] , [
-        a lv2:InputPort ,
-            lv2:ControlPort ;
-        lv2:index 7 ;
-        lv2:symbol "bypass" ;
-        lv2:name "Bypass" ;
-        lv2:portProperty lv2:toggled ;
-        lv2:default 0.0 ;
-        lv2:minimum 0.0 ;
-        lv2:maximum 1.0
-    ] , [
-        a lv2:InputPort ,
-            lv2:ControlPort ;
         lv2:index 8 ;
         lv2:symbol "saturation" ;
         lv2:name "Saturation" ;
@@ -116,18 +116,22 @@
         a lv2:InputPort ,
             lv2:ControlPort ;
         lv2:index 9 ;
-        lv2:symbol "blend" ;
-        lv2:name "Octave Blend" ;
-        lv2:default 0.0 ;
-        lv2:minimum -10 ;
-        lv2:maximum 10.0 ;
-    ] , [
-        a lv2:InputPort ,
-            lv2:ControlPort ;
-        lv2:index 10 ;
-        lv2:symbol "harmonics" ;
-        lv2:name "Harmonics" ;
-        lv2:default 9.5 ;
-        lv2:minimum 0 ;
-        lv2:maximum 12 ;
+        lv2:symbol "fc_out" ;
+        lv2:name "Final High Pass" ;
+        lv2:portProperty epp:logarithmic ;
+        lv2:portProperty epp:hasStrictBounds ;
+        lv2:default 200 ;
+        lv2:minimum 10 ;
+        lv2:maximum 250 ;
+        units:unit units:hz ;
+        lv2:scalePoint [
+            rdfs:label "20" ;
+            rdf:value 20
+        ] , [
+            rdfs:label "100" ;
+            rdf:value 100
+        ] , [
+            rdfs:label "200" ;
+            rdf:value 200
+        ]
     ] .
