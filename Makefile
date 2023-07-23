@@ -7,10 +7,10 @@ default:
 	cargo build --release
 
 install:
-	install -dD $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/
-	install -m0655 target/release/libbankstown.so $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/bankstown.so
-	install -m0644 bankstown.ttl $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/bankstown.ttl
-	install -m0644 manifest.ttl $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/manifest.ttl
+	install -dDm0755 $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/
+	install -pm0755 target/release/libbankstown.so $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/bankstown.so
+	install -pm0644 bankstown.ttl $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/bankstown.ttl
+	install -pm0644 manifest.ttl $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/manifest.ttl
 
 uninstall:
 	rm -rf $(DESTDIR)/$(LIBDIR)/lv2/bankstown.lv2/
