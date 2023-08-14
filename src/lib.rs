@@ -187,14 +187,14 @@ impl Plugin for Subwoofer {
                 processed = self.sat.process(processed) * self.amt_curr;
 
                 // Add it back to the input signal
-                *outl = self.final_pass[0].run(processed) + inl;
+                *outl = processed + self.final_pass[0].run(*inl);
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
                 let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(*inr));
 
                 processed = self.sat.process(processed) * self.amt_curr;
 
-                *outr = self.final_pass[1].run(processed) + inr;
+                *outr = processed + self.final_pass[1].run(*inr);
             }
         }
     }
