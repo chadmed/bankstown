@@ -40,7 +40,9 @@ struct Ports {
     amt: InputPort<Control>,
     floor: InputPort<Control>,
     ceil: InputPort<Control>,
-    saturation: InputPort<Control>,
+    sat_second: InputPort<Control>,
+    sat_third: InputPort<Control>,
+    blend: InputPort<Control>,
     fc_out: InputPort<Control>
 }
 
@@ -50,7 +52,9 @@ struct Ports {
  * Uses a modified Error function.
  */
 struct Distortion {
-    gain: f32,
+    third_gain: f32,
+    second_gain: f32,
+    coeff: f32,
 }
 
 trait Saturator {
@@ -62,13 +66,21 @@ trait Saturator {
 impl Saturator for Distortion {
     fn new() -> Self {
         Self {
-            gain: 0f32,
+            third_gain: 0f32,
+            second_gain: 0f32,
+            coeff: 0f32,
         }
     }
 
     fn update_params(&mut self, ports: &Ports) {
-        if self.gain != *ports.saturation {
-            self.gain = *ports.saturation;
+        if self.third_gain != *ports.sat_third {
+            self.third_gain = *ports.sat_third;
+        }
+        if self.second_gain != *ports.sat_second {
+            self.second_gain = *ports.sat_second;
+        }
+        if self.coeff != *ports.blend {
+            self.coeff = *ports.blend;
         }
     }
 
@@ -78,7 +90,14 @@ impl Saturator for Distortion {
      * scale
      */
     fn process(&mut self, sample: f32) -> f32 {
-        (PI / (1f32 + E)) * (sample * self.gain).tanh()
+        let mut out: f32;
+        // Third harmonic from symmetrical Error function
+        out = self.coeff * (PI / (1f32 + E)) * (sample * self.third_gain).tanh();
+        // Second harmonic from asymmetric Error function
+        if sample >= 0.0 {
+            out += (1f32 - self.coeff) * (PI / (1f32 + E)) * (sample * self.second_gain).tanh();
+        }
+        return out;
     }
 }
 

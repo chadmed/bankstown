@@ -107,8 +107,8 @@
         a lv2:InputPort ,
             lv2:ControlPort ;
         lv2:index 8 ;
-        lv2:symbol "saturation" ;
-        lv2:name "Saturation" ;
+        lv2:symbol "sat_second" ;
+        lv2:name "Second Harmonic" ;
         lv2:default 1.0 ;
         lv2:minimum 0.0 ;
         lv2:maximum 15.0 ;
@@ -116,6 +116,24 @@
         a lv2:InputPort ,
             lv2:ControlPort ;
         lv2:index 9 ;
+        lv2:symbol "sat_third" ;
+        lv2:name "Third Harmonic" ;
+        lv2:default 1.0 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 15.0 ;
+    ] , [
+        a lv2:InputPort ,
+            lv2:ControlPort ;
+        lv2:index 10 ;
+        lv2:symbol "blend" ;
+        lv2:name "Harmonic Ratio" ;
+        lv2:default 0.5 ;
+        lv2:minimum 0.0 ;
+        lv2:maximum 1.0 ;
+    ] , [
+        a lv2:InputPort ,
+            lv2:ControlPort ;
+        lv2:index 11 ;
         lv2:symbol "fc_out" ;
         lv2:name "Final High Pass" ;
         lv2:portProperty epp:logarithmic ;
