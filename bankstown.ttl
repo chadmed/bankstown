@@ -130,26 +130,4 @@
         lv2:default 0.5 ;
         lv2:minimum 0.0 ;
         lv2:maximum 1.0 ;
-    ] , [
-        a lv2:InputPort ,
-            lv2:ControlPort ;
-        lv2:index 11 ;
-        lv2:symbol "fc_out" ;
-        lv2:name "Final High Pass" ;
-        lv2:portProperty epp:logarithmic ;
-        lv2:portProperty epp:hasStrictBounds ;
-        lv2:default 200 ;
-        lv2:minimum 10 ;
-        lv2:maximum 250 ;
-        units:unit units:hz ;
-        lv2:scalePoint [
-            rdfs:label "20" ;
-            rdf:value 20
-        ] , [
-            rdfs:label "100" ;
-            rdf:value 100
-        ] , [
-            rdfs:label "200" ;
-            rdf:value 200
-        ]
     ] .

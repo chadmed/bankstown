@@ -42,8 +42,7 @@ struct Ports {
     ceil: InputPort<Control>,
     sat_second: InputPort<Control>,
     sat_third: InputPort<Control>,
-    blend: InputPort<Control>,
-    fc_out: InputPort<Control>
+    blend: InputPort<Control>
 }
 
 /*
@@ -120,11 +119,9 @@ struct Subwoofer {
     ceil_curr: f32,
     amt_curr: f32,
     sample_rate: f32,
-    final_curr: f32,
     sat: Distortion,
     low_pass: Vec<DirectForm2Transposed::<f32>>,
     high_pass: Vec<DirectForm2Transposed::<f32>>,
-    final_pass: Vec<DirectForm2Transposed::<f32>>
 }
 
 /*
@@ -149,14 +146,6 @@ fn build_hpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
     filters
 }
 
-fn build_finals(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
-    let final_coeff = Coefficients::<f32>::from_params(Type::HighPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
-                                           .unwrap();
-
-    let filters: Vec<DirectForm2Transposed::<f32>> = vec![DirectForm2Transposed::<f32>::new(final_coeff); 2];
-
-    filters
-}
 
 /*
  * Extend the Plugin trait so that we can modularly update the parameters of
@@ -178,11 +167,9 @@ impl Plugin for Subwoofer {
             ceil_curr: 0f32,
             amt_curr: 0f32,
             sample_rate: info.sample_rate() as f32,
-            final_curr: 0f32,
             sat: Saturator::new(),
             low_pass: build_lpfs(200f32, info.sample_rate() as f32),
             high_pass: build_hpfs(20f32, info.sample_rate() as f32),
-            final_pass: build_finals(180f32, info.sample_rate() as f32)
         })
     }
 
@@ -206,14 +193,14 @@ impl Plugin for Subwoofer {
                 processed = self.sat.process(processed) * self.amt_curr;
 
                 // Add it back to the input signal
-                *outl = processed + self.final_pass[0].run(*inl);
+                *outl = processed + *inl;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
                 let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(*inr));
 
                 processed = self.sat.process(processed) * self.amt_curr;
 
-                *outr = processed + self.final_pass[1].run(*inr);
+                *outr = processed + *inr;
             }
         }
     }
@@ -234,11 +221,6 @@ impl BassEx for Subwoofer {
 
         if self.amt_curr != *ports.amt {
             self.amt_curr = *ports.amt;
-        }
-
-        if self.final_curr != *ports.fc_out {
-            self.final_pass = build_finals(*ports.fc_out, self.sample_rate);
-            self.final_curr = *ports.fc_out;
         }
     }
 }
