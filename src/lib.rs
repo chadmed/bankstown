@@ -96,7 +96,7 @@ impl Saturator for Distortion {
         if sample >= 0.0 {
             out += (1f32 - self.coeff) * (PI / (1f32 + E)) * (sample * self.second_gain).tanh();
         }
-        return out;
+        return out.clamp(-1000f32, 1000f32);
     }
 }
 
@@ -178,29 +178,31 @@ impl Plugin for Subwoofer {
         self.sat.update_params(ports);
         if *ports.bypass == 1.0 {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
-                *outl = inl * 1.0;
+                *outl = inl.clamp(-1000f32, 1000f32) * 1.0;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
-                *outr = inr * 1.0;
+                *outr = inr.clamp(-1000f32, 1000f32) * 1.0;
             }
         } else {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
                 // Band pass on the input so that we are only saturating on the range we
                 // want to enhance
-                let mut processed: f32 = self.low_pass[0].run(self.high_pass[0].run(*inl));
+                let sample_l: f32 = inl.clamp(-1000f32, 1000f32);
+                let mut processed: f32 = self.low_pass[0].run(self.high_pass[0].run(sample_l));
 
                 // Introduce nonlinearity to the passband
                 processed = self.sat.process(processed) * self.amt_curr;
 
                 // Add it back to the input signal
-                *outl = processed + *inl;
+                *outl = processed + sample_l;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
-                let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(*inr));
+                let sample_r: f32 = inr.clamp(-1000f32, 1000f32);
+                let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(sample_r));
 
                 processed = self.sat.process(processed) * self.amt_curr;
 
-                *outr = processed + *inr;
+                *outr = processed + sample_r;
             }
         }
     }
