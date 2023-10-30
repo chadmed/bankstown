@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 /*
- * Sick mate sick subwoofer
- *
  * Bass and sub-bass frequencies are poorly reproduced by microspeakers. Luckily,
  * the human brain is malleable and will reconstruct these frequencies from their
  * harmonics as if they were really there. We can use this phenomenon to get better

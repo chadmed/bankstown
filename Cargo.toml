@@ -1,9 +1,13 @@
 [package]
 name = "bankstown-lv2"
 authors = ["James Calligeros"]
+description = "A barebones, fast LV2 bass enhancement plugin"
 license = "MIT"
-version = "0.2.0"
+repository = "https://github.com/chadmed/bankstown"
+version = "1.0.0"
 edition = "2021"
+keywords = ["lv2", "bass", "audio", "plugin"]
+categories = ["multimedia::audio"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [profile.release]

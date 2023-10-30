@@ -33,5 +33,3 @@ tricking you into thinking there is "fuller" bass than there actually is.
 This trick is common in virtually everything from Bluetooth earbuds to
 expensive active "compact" HiFi speakers, and is the reason they can sound
 as good as they do.
-
-[Inspiration](https://www.youtube.com/watch?v=F-hA0B9fr08)
