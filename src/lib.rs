@@ -176,10 +176,10 @@ impl Plugin for Subwoofer {
         self.sat.update_params(ports);
         if *ports.bypass == 1.0 {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
-                *outl = inl.clamp(-1000f32, 1000f32) * 1.0;
+                *outl = inl.clamp(-10f32, 10f32) * 1.0;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
-                *outr = inr.clamp(-1000f32, 1000f32) * 1.0;
+                *outr = inr.clamp(-10f32, 10f32) * 1.0;
             }
         } else {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
