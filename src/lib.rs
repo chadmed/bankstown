@@ -183,6 +183,10 @@ impl Plugin for Subwoofer {
             }
         } else {
             for (inl, outl) in Iterator::zip(ports.in_l.iter(), ports.out_l.iter_mut()) {
+                let mut inl = *inl;
+                if !inl.is_finite() {
+                    inl = 0f32;
+                }
                 // Band pass on the input so that we are only saturating on the range we
                 // want to enhance
                 let sample_l: f32 = inl.clamp(-10f32, 10f32);
@@ -195,6 +199,10 @@ impl Plugin for Subwoofer {
                 *outl = processed + sample_l;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
+                let mut inr = *inr;
+                if !inr.is_finite() {
+                    inr = 0f32;
+                }
                 let sample_r: f32 = inr.clamp(-10f32, 10f32);
                 let mut processed: f32 = self.low_pass[1].run(self.high_pass[1].run(sample_r));
 
