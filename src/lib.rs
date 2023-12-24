@@ -38,6 +38,7 @@ struct Ports {
     amt: InputPort<Control>,
     floor: InputPort<Control>,
     ceil: InputPort<Control>,
+    final_hp: InputPort<Control>,
     sat_second: InputPort<Control>,
     sat_third: InputPort<Control>,
     blend: InputPort<Control>
@@ -91,8 +92,10 @@ impl Saturator for Distortion {
         // Third harmonic from symmetrical Error function
         out = self.coeff * (PI / (1f32 + E)) * (sample * self.third_gain).tanh();
         // Second harmonic from asymmetric Error function
-        if sample >= 0.0 {
+        if sample > 0f32 {
             out += (1f32 - self.coeff) * (PI / (1f32 + E)) * (sample * self.second_gain).tanh();
+        } else {
+            out += 0f32;
         }
         return out.clamp(-10f32, 10f32);
     }
@@ -116,10 +119,13 @@ struct Subwoofer {
     floor_curr: f32,
     ceil_curr: f32,
     amt_curr: f32,
+    final_hp_curr: f32,
     sample_rate: f32,
     sat: Distortion,
     low_pass: Vec<DirectForm2Transposed::<f32>>,
     high_pass: Vec<DirectForm2Transposed::<f32>>,
+    final_pass: Vec<DirectForm2Transposed::<f32>>,
+    clamp_pass: Vec<DirectForm2Transposed::<f32>>,
 }
 
 /*
@@ -164,10 +170,13 @@ impl Plugin for Subwoofer {
             floor_curr: 0f32,
             ceil_curr: 0f32,
             amt_curr: 0f32,
+            final_hp_curr: 0f32,
             sample_rate: info.sample_rate() as f32,
             sat: Saturator::new(),
             low_pass: build_lpfs(200f32, info.sample_rate() as f32),
             high_pass: build_hpfs(20f32, info.sample_rate() as f32),
+            final_pass: build_hpfs(200f32, info.sample_rate() as f32),
+            clamp_pass: build_lpfs(600f32, info.sample_rate() as f32),
         })
     }
 
@@ -196,7 +205,7 @@ impl Plugin for Subwoofer {
                 processed = self.sat.process(processed) * self.amt_curr;
 
                 // Add it back to the input signal
-                *outl = processed + sample_l;
+                *outl = self.clamp_pass[0].run(self.final_pass[0].run(processed)) + sample_l;
             }
             for (inr, outr) in Iterator::zip(ports.in_r.iter(), ports.out_r.iter_mut()) {
                 let mut inr = *inr;
@@ -208,7 +217,7 @@ impl Plugin for Subwoofer {
 
                 processed = self.sat.process(processed) * self.amt_curr;
 
-                *outr = processed + sample_r;
+                *outr = self.clamp_pass[1].run(self.final_pass[1].run(processed)) + sample_r;
             }
         }
     }
@@ -224,11 +233,17 @@ impl BassEx for Subwoofer {
 
         if self.ceil_curr != *ports.ceil {
             self.low_pass = build_lpfs(*ports.ceil, self.sample_rate);
+            self.clamp_pass = build_lpfs(*ports.ceil * 3f32, self.sample_rate);
             self.ceil_curr = *ports.ceil;
         }
 
         if self.amt_curr != *ports.amt {
             self.amt_curr = *ports.amt;
+        }
+
+        if self.final_hp_curr != *ports.final_hp {
+            self.final_pass = build_hpfs(*ports.final_hp, self.sample_rate);
+            self.final_hp_curr = *ports.final_hp;
         }
     }
 }
