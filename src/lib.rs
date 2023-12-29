@@ -90,12 +90,10 @@ impl Saturator for Distortion {
     fn process(&mut self, sample: f32) -> f32 {
         let mut out: f32;
         // Third harmonic from symmetrical Error function
-        out = self.coeff * (PI / (1f32 + E)) * (sample * self.third_gain).tanh();
+        out = self.coeff * (PI / (0.5f32 + E)) * ((sample * self.third_gain).tanh());
         // Second harmonic from asymmetric Error function
-        if sample > 0f32 {
-            out += (1f32 - self.coeff) * (PI / (1f32 + E)) * (sample * self.second_gain).tanh();
-        } else {
-            out += 0f32;
+        if sample <= 0f32 {
+            out += (1f32 - self.coeff) * (PI / (0.5f32 + E)) * (sample * self.second_gain).tanh();
         }
         return out.clamp(-10f32, 10f32);
     }
