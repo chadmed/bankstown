@@ -131,6 +131,10 @@ struct Subwoofer {
  *
  */
 fn build_lpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
+    if rate == 0.0 {
+        return vec![];
+    }
+
     let lp_coeff = Coefficients::<f32>::from_params(Type::LowPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
                                         .unwrap();
 
@@ -140,6 +144,10 @@ fn build_lpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
 }
 
 fn build_hpfs(fc: f32, rate: f32) -> Vec<DirectForm2Transposed::<f32>> {
+    if rate == 0.0 {
+        return vec![];
+    }
+
     let hp_coeff = Coefficients::<f32>::from_params(Type::HighPass, rate.hz(), fc.hz(), Q_BUTTERWORTH_F32)
                                         .unwrap();
 
